@@ -3,48 +3,47 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Semaphores; use GNAT.Semaphores;
 
 procedure Dinner_Philosophers is
-   forks : array (1 .. 5) of Counting_Semaphore (1, Default_Ceiling);
+   task type Phylosopher is
+      entry Start(Id : Integer);
+   end Phylosopher;
 
-   task type philosopher is
-      entry set_id (id : in Integer);
-   end philosopher;
+   Forks : array (1..5) of Counting_Semaphore(1, Default_Ceiling);
 
-   task body philosopher is
-      id              : Integer;
-      dinner_numbers  : Integer := 5;
-      num_second_fork : Integer;
+   task body Phylosopher is
+      Id : Integer;
+      Id_Left_Fork, Id_Right_Fork : Integer;
    begin
-      accept set_id (id : in Integer) do
-         philosopher.id := id;
-      end set_id;
-      num_second_fork := id rem 5 + 1;
+      accept Start (Id : in Integer) do
+         Phylosopher.Id := Id;
+      end Start;
+      Id_Left_Fork := Id;
+      Id_Right_Fork := Id rem 5 + 1;
 
-      for i in 1 .. dinner_numbers loop
-         if id < 5 then
-            Put_Line ("philosopher" & id'Img & " thinking");
-            forks (id).Seize;
-            Put_Line ("philosopher" & id'Img & " await" & num_second_fork'img & " fork");
-            forks (num_second_fork).Seize;
+      --Put_Line(Id'Img & " - " & Id_Left_Fork'Img & ", " & Id_Right_Fork'Img);
 
-            Put_Line ("philosopher" & id'Img & " eating" & i'Img & " times");
+      for I in 1..10 loop
+         Put_Line("Phylosopher " & Id'Img & " thinking " & I'Img & " time");
 
-            forks (num_second_fork).Release;
-            forks (id).Release;
-         else
-            Put_Line ("philosopher" & id'Img & " thinking");
-            forks (1).Seize;
-            Put_Line ("philosopher" & id'Img & " wait" & id'Img & " fork");
-            forks (5).Seize;
-            Put_Line ("philosopher" & id'Img & " eating" & i'Img & " times");
-            forks (5).Release;
-            forks (1).Release;
-         end if;
+         Forks(Id_Left_Fork).Seize;
+         Put_Line("Phylosopher " & Id'Img & " took left fork");
+
+         Forks(Id_Right_Fork).Seize;
+         Put_Line("Phylosopher " & Id'Img & " took right fork");
+
+         Put_Line("Phylosopher " & Id'Img & " eating" & I'Img & " time");
+
+         Forks(Id_Right_Fork).Release;
+         Put_Line("Phylosopher " & Id'Img & " put right fork");
+
+         Forks(Id_Left_Fork).Release;
+         Put_Line("Phylosopher " & Id'Img & " put left fork");
       end loop;
-   end philosopher;
+   end Phylosopher;
 
-   philosophers : array (1 .. 5) of philosopher;
-begin
-   for i in philosophers'Range loop
-      philosophers (i).set_id (i);
+   Phylosophers : array (1..5) of Phylosopher;
+Begin
+   for I in Phylosophers'Range loop
+      Phylosophers(I).Start(I);
    end loop;
+
 end Dinner_Philosophers;
